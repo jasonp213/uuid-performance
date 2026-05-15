@@ -1,0 +1,11 @@
+scenario,method,offset,limit,millis
+pg_serial,offset,999500,100,47.27
+pg_serial,cursor_created_at,999500,100,0.49
+pg_uuidv4_app,offset,999500,100,379.10
+pg_uuidv7_app,offset,999500,100,47.22
+pg_uuidv7_app,cursor_pk,999500,100,2.53
+mysql_autoinc,offset,999500,100,97.93
+mysql_autoinc,cursor_created_at,999500,100,0.70
+mysql_uuidv4_app,offset,999500,100,101.79
+mysql_uuidv7_app,offset,999500,100,98.89
+mysql_uuidv7_app,cursor_pk,999500,100,0.53

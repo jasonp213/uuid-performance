@@ -1,0 +1,63 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: uuidlab-pg17
+    environment:
+      POSTGRES_USER: bench
+      POSTGRES_PASSWORD: bench
+      POSTGRES_DB: bench
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_buffers=512MB"
+      - "-c"
+      - "work_mem=32MB"
+      - "-c"
+      - "maintenance_work_mem=256MB"
+      - "-c"
+      - "wal_compression=on"
+      - "-c"
+      - "max_wal_size=4GB"
+      - "-c"
+      - "checkpoint_timeout=15min"
+      - "-c"
+      - "synchronous_commit=off"
+    ports:
+      - "55432:5432"
+    volumes:
+      - ./sql/pg-init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bench -d bench"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  mysql:
+    image: mysql:8.0
+    container_name: uuidlab-mysql8
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: bench
+      MYSQL_PASSWORD: bench
+      MYSQL_DATABASE: bench
+    command:
+      - "--innodb-buffer-pool-size=512M"
+      - "--innodb-log-file-size=512M"
+      - "--innodb-flush-log-at-trx-commit=2"
+      - "--sync-binlog=0"
+      - "--local-infile=1"
+    ports:
+      - "53306:3306"
+    volumes:
+      - ./sql/mysql-init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - mysqldata:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -ubench -pbench --silent"]
+      interval: 3s
+      timeout: 3s
+      retries: 60
+
+volumes:
+  pgdata:
+  mysqldata:
