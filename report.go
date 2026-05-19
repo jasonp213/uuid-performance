@@ -63,6 +63,60 @@ func writePaginationCSV(path string, samples []PaginationSample) error {
 	return nil
 }
 
+func readInsertCSV(path string) ([]InsertSample, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	rows, err := csv.NewReader(f).ReadAll()
+	if err != nil {
+		return nil, err
+	}
+	var out []InsertSample
+	for _, r := range rows[1:] { // skip header
+		if len(r) < 7 {
+			continue
+		}
+		cumRows, _ := strconv.Atoi(r[1])
+		chunkRows, _ := strconv.Atoi(r[2])
+		chunkMS, _ := strconv.ParseInt(r[3], 10, 64)
+		rps, _ := strconv.ParseFloat(r[4], 64)
+		total, _ := strconv.ParseInt(r[5], 10, 64)
+		idx, _ := strconv.ParseInt(r[6], 10, 64)
+		out = append(out, InsertSample{
+			Scenario: r[0], CumRows: cumRows, ChunkRows: chunkRows,
+			ChunkMS: chunkMS, RowsPerSec: rps, TotalBytes: total, IndexBytes: idx,
+		})
+	}
+	return out, nil
+}
+
+func readPaginationCSV(path string) ([]PaginationSample, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	rows, err := csv.NewReader(f).ReadAll()
+	if err != nil {
+		return nil, err
+	}
+	var out []PaginationSample
+	for _, r := range rows[1:] { // skip header
+		if len(r) < 5 {
+			continue
+		}
+		offset, _ := strconv.Atoi(r[2])
+		limit, _ := strconv.Atoi(r[3])
+		millis, _ := strconv.ParseFloat(r[4], 64)
+		out = append(out, PaginationSample{
+			Scenario: r[0], Method: r[1], Offset: offset, Limit: limit, Millis: millis,
+		})
+	}
+	return out, nil
+}
+
 func writeReport(path string, cfg Config, inserts []InsertSample, pagings []PaginationSample) error {
 	f, err := os.Create(path)
 	if err != nil {

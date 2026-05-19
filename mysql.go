@@ -103,6 +103,16 @@ func mysqlInsertBatch(ctx context.Context, db *sql.DB, scenario string, n int, r
 			sb.WriteString("(?,?,?)")
 			args = append(args, rng.Int63n(10_000_000), randAmount(rng), randStatus(rng))
 		}
+	case "mysql_autoinc_uuidv4_uk":
+		sb.WriteString("INSERT INTO mysql_autoinc_uuidv4_uk (uuid, user_id, amount, status) VALUES ")
+		for i := 0; i < n; i++ {
+			if i > 0 {
+				sb.WriteString(",")
+			}
+			sb.WriteString("(?,?,?,?)")
+			id := uuid.New()
+			args = append(args, id[:], rng.Int63n(10_000_000), randAmount(rng), randStatus(rng))
+		}
 	case "mysql_uuidv4_app", "mysql_uuidv7_app":
 		table := scenario
 		sb.WriteString(fmt.Sprintf("INSERT INTO %s (id, user_id, amount, status) VALUES ", table))
@@ -197,6 +207,22 @@ func mysqlPaginate(ctx context.Context, db *sql.DB, scenario string, cfg Config)
 		}
 		if err := measure("cursor_created_at",
 			fmt.Sprintf("SELECT id, user_id, amount, status, created_at FROM mysql_autoinc WHERE created_at >= ? ORDER BY created_at LIMIT %d", cfg.PaginationN),
+			pivot); err != nil {
+			return nil, err
+		}
+	case "mysql_autoinc_uuidv4_uk":
+		if err := measure("offset",
+			fmt.Sprintf("SELECT id, uuid, user_id, amount, status, created_at FROM mysql_autoinc_uuidv4_uk ORDER BY id LIMIT %d OFFSET %d", cfg.PaginationN, deepOffset)); err != nil {
+			return nil, err
+		}
+		var pivot time.Time
+		row := db.QueryRowContext(ctx,
+			fmt.Sprintf("SELECT created_at FROM mysql_autoinc_uuidv4_uk ORDER BY created_at LIMIT 1 OFFSET %d", deepOffset))
+		if err := row.Scan(&pivot); err != nil {
+			return nil, fmt.Errorf("mysql_autoinc_uuidv4_uk pivot: %w", err)
+		}
+		if err := measure("cursor_created_at",
+			fmt.Sprintf("SELECT id, uuid, user_id, amount, status, created_at FROM mysql_autoinc_uuidv4_uk WHERE created_at >= ? ORDER BY created_at LIMIT %d", cfg.PaginationN),
 			pivot); err != nil {
 			return nil, err
 		}

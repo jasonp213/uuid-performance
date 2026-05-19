@@ -9,3 +9,5 @@ mysql_autoinc,cursor_created_at,19999500,100,2.12
 mysql_uuidv4_app,offset,19999500,100,10229.35
 mysql_uuidv7_app,offset,19999500,100,2497.06
 mysql_uuidv7_app,cursor_pk,19999500,100,1.17
+mysql_autoinc_uuidv4_uk,offset,19999500,100,17322.22
+mysql_autoinc_uuidv4_uk,cursor_created_at,19999500,100,1.93

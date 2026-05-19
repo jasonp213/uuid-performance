@@ -23,6 +23,7 @@ type Config struct {
 	SkipInsert     bool
 	SkipPagination bool
 	Truncate       bool
+	Append         bool
 }
 
 type InsertSample struct {
@@ -48,6 +49,7 @@ var allScenarios = []string{
 	"pg_uuidv4_app",
 	"pg_uuidv7_app",
 	"mysql_autoinc",
+	"mysql_autoinc_uuidv4_uk",
 	"mysql_uuidv4_app",
 	"mysql_uuidv7_app",
 }
@@ -67,6 +69,7 @@ func main() {
 	flag.BoolVar(&cfg.SkipInsert, "skip-insert", false, "skip insert phase (assumes tables already populated)")
 	flag.BoolVar(&cfg.SkipPagination, "skip-pagination", false, "skip pagination phase")
 	flag.BoolVar(&cfg.Truncate, "truncate", true, "truncate tables before insert phase")
+	flag.BoolVar(&cfg.Append, "append", false, "merge new results into existing CSV files instead of overwriting")
 
 	flag.Parse()
 
@@ -115,6 +118,10 @@ func main() {
 		pagings = append(pagings, myPag...)
 	}
 
+	if cfg.Append {
+		inserts, pagings = mergeResults(cfg, inserts, pagings)
+	}
+
 	if err := writeInsertCSV(filepath.Join(cfg.OutputDir, "inserts.csv"), inserts); err != nil {
 		log.Fatalf("write inserts.csv: %v", err)
 	}
@@ -155,6 +162,38 @@ func expandScenarios(flag string) []string {
 	}
 	sort.Strings(out)
 	return out
+}
+
+func mergeResults(cfg Config, newInserts []InsertSample, newPagings []PaginationSample) ([]InsertSample, []PaginationSample) {
+	runSet := map[string]bool{}
+	for _, s := range cfg.Scenarios {
+		runSet[s] = true
+	}
+
+	insertPath := filepath.Join(cfg.OutputDir, "inserts.csv")
+	pagingPath := filepath.Join(cfg.OutputDir, "pagination.csv")
+
+	var mergedInserts []InsertSample
+	if old, err := readInsertCSV(insertPath); err == nil {
+		for _, s := range old {
+			if !runSet[s.Scenario] {
+				mergedInserts = append(mergedInserts, s)
+			}
+		}
+	}
+	mergedInserts = append(mergedInserts, newInserts...)
+
+	var mergedPagings []PaginationSample
+	if old, err := readPaginationCSV(pagingPath); err == nil {
+		for _, s := range old {
+			if !runSet[s.Scenario] {
+				mergedPagings = append(mergedPagings, s)
+			}
+		}
+	}
+	mergedPagings = append(mergedPagings, newPagings...)
+
+	return mergedInserts, mergedPagings
 }
 
 func filter(in []string, pred func(string) bool) []string {
