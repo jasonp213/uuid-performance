@@ -24,6 +24,7 @@ type Config struct {
 	SkipPagination bool
 	Truncate       bool
 	Append         bool
+	ReportOnly     bool
 }
 
 type InsertSample struct {
@@ -70,6 +71,7 @@ func main() {
 	flag.BoolVar(&cfg.SkipPagination, "skip-pagination", false, "skip pagination phase")
 	flag.BoolVar(&cfg.Truncate, "truncate", true, "truncate tables before insert phase")
 	flag.BoolVar(&cfg.Append, "append", false, "merge new results into existing CSV files instead of overwriting")
+	flag.BoolVar(&cfg.ReportOnly, "report-only", false, "regenerate report.md and report.html from existing CSV files, skipping all database work")
 
 	flag.Parse()
 
@@ -85,6 +87,11 @@ func main() {
 	}
 	if err := os.MkdirAll(cfg.OutputDir, 0o755); err != nil {
 		log.Fatalf("mkdir output: %v", err)
+	}
+
+	if cfg.ReportOnly {
+		runReportOnly(cfg)
+		return
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -133,7 +140,40 @@ func main() {
 	if err := writeReport(reportPath, cfg, inserts, pagings); err != nil {
 		log.Fatalf("write report: %v", err)
 	}
-	log.Printf("done. report: %s", reportPath)
+
+	htmlPath := filepath.Join(cfg.OutputDir, "report.html")
+	if err := writeHTMLReport(htmlPath, cfg, inserts, pagings); err != nil {
+		log.Fatalf("write html report: %v", err)
+	}
+	log.Printf("done. report: %s  html: %s", reportPath, htmlPath)
+}
+
+// runReportOnly regenerates report.md and report.html from the CSV files
+// already present in the output directory, without touching any database.
+func runReportOnly(cfg Config) {
+	insertPath := filepath.Join(cfg.OutputDir, "inserts.csv")
+	pagingPath := filepath.Join(cfg.OutputDir, "pagination.csv")
+
+	inserts, err := readInsertCSV(insertPath)
+	if err != nil {
+		log.Fatalf("read %s: %v", insertPath, err)
+	}
+	pagings, err := readPaginationCSV(pagingPath)
+	if err != nil {
+		log.Fatalf("read %s: %v", pagingPath, err)
+	}
+	log.Printf("report-only: loaded %d insert rows, %d pagination rows from %s", len(inserts), len(pagings), cfg.OutputDir)
+
+	reportPath := filepath.Join(cfg.OutputDir, "report.md")
+	if err := writeReport(reportPath, cfg, inserts, pagings); err != nil {
+		log.Fatalf("write report: %v", err)
+	}
+
+	htmlPath := filepath.Join(cfg.OutputDir, "report.html")
+	if err := writeHTMLReport(htmlPath, cfg, inserts, pagings); err != nil {
+		log.Fatalf("write html report: %v", err)
+	}
+	log.Printf("done. report: %s  html: %s", reportPath, htmlPath)
 }
 
 func expandScenarios(flag string) []string {

@@ -1,14 +1,14 @@
 # UUID Primary Key Benchmark
 
-_Generated: 2026-05-19T13:49:35+08:00_
+_Generated: 2026-06-04T18:28:24+08:00_
 
 ## Configuration
 
 - Rows per scenario: **20000000**
 - Batch (rows per INSERT statement): **1000**
-- Chunk (rows per measurement checkpoint): **1000000**
+- Chunk (rows per measurement checkpoint): **100000**
 - Pagination limit: **100**
-- Scenarios: mysql_autoinc_uuidv4_uk
+- Scenarios: pg_serial, pg_uuidv4_app, pg_uuidv7_app, mysql_autoinc, mysql_autoinc_uuidv4_uk, mysql_uuidv4_app, mysql_uuidv7_app
 
 Engines: PostgreSQL 17, MySQL 8.0
 
@@ -51,9 +51,9 @@ Neither PG 17 nor MySQL 8 has a native `uuidv7()` generator, so UUIDv7 values ar
 | 6000000 | 245404 | 92089 | 76130 | 174773 | 268488 | 147435 | 250293 |
 | 7000000 | 245370 | 72243 | 14471 | 185064 | 252999 | 148982 | 224698 |
 | 8000000 | 239522 | 62456 | 7764 | 173285 | 276067 | 155000 | 201774 |
-| 9000000 | 234509 | 55117 | 6933 | 166038 | 265822 | 136090 | 172921 |
+| 9000000 | 234509 | 55116 | 6933 | 166038 | 265822 | 136090 | 172921 |
 | 10000000 | 227761 | 62754 | 5060 | 178774 | 247937 | 98456 | 171964 |
-| 11000000 | 247295 | 107031 | 4240 | 178815 | 251436 | 138008 | 164093 |
+| 11000000 | 247295 | 107030 | 4240 | 178815 | 251436 | 138008 | 164093 |
 | 12000000 | 262464 | 92358 | 4045 | 189016 | 248885 | 147191 | 172660 |
 | 13000000 | 237390 | 53104 | 3584 | 174514 | 248177 | 139676 | 222862 |
 | 14000000 | 239841 | 26079 | 3423 | 185116 | 248893 | 118700 | 238902 |

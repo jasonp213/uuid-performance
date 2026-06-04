@@ -28,7 +28,8 @@ Neither PG 17 nor MySQL 8 ships a native `uuidv7()` generator, so UUIDv7 values 
 docker-compose up -d                # PG 17 on :55432, MySQL 8 on :53306
 go build -o bin/bench .
 ./bin/bench                          # default: 1,000,000 rows × 7 scenarios
-open results/report.md
+open results/report.md               # Markdown tables + takeaways
+open results/report.html             # interactive charts (Chart.js)
 ```
 
 ## CLI flags
@@ -88,6 +89,11 @@ Use `-append` to inject a single scenario's results into an already-populated ou
 > docker exec -i uuidlab-mysql8 mysql -ubench -pbench bench < sql/mysql-init.sql
 > ```
 > Replace `mysql-init.sql` with a one-off `CREATE TABLE` statement if you don't want to recreate all tables.
+
+Each run writes two reports into `-output-dir`:
+
+- `report.md` — Markdown tables and takeaways (renders on GitHub).
+- `report.html` — the same data as interactive [Chart.js](https://www.chartjs.org/) line/bar charts with hover tooltips and a clickable legend to toggle scenarios. Each scenario keeps a stable color across every chart. Chart.js is loaded from a CDN, so viewing the HTML needs network access (the data itself is inlined, so it works offline once the library is cached).
 
 ## What the report contains
 
